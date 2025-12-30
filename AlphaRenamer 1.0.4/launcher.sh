@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# === RUNTIME ONLY ===
+# Préfère un venv portable local (./app/venv) s’il existe, sinon utilise celui créé par l’installeur externe.
+
+APP_NAME="PDF-Renommage"   # ← exactement le nom du dossier sous ~/Library/Application Support/
+SELF="$(cd "$(dirname "$0")" && pwd)"
+APPDIR="$SELF/app"
+MAIN="$APPDIR/alpha_renamer_gui.py"
+
+# Venv portable (dans le dossier app) puis fallback vers la venv utilisateur
+PORTABLE_VENV="$APPDIR/venv"
+PORTABLE_PY="$PORTABLE_VENV/bin/python"
+USER_VENV="$HOME/Library/Application Support/$APP_NAME/venv"
+USER_PY="$USER_VENV/bin/python"
+REQ_FILE="$APPDIR/requirements.txt"
+REQ_HASH_FILE="$USER_VENV/.req_hash"
+
+# Petit log côté utilisateur
+LOGDIR="$HOME/Library/Logs/$APP_NAME"
+LOGFILE="$LOGDIR/launcher.log"
+mkdir -p "$LOGDIR"
+exec >>"$LOGFILE" 2>&1
+echo "=== $(date) ==="
+echo "MAIN=$MAIN"
+
+alert(){ /usr/bin/osascript -e 'display dialog "'"$1"'" buttons {"OK"} default button 1 with icon caution'; }
+
+pick_bootstrap_python() {
+  local CANDIDATES=(
+    "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
+    "/Library/Frameworks/Python.framework/Versions/3.11/bin/python3"
+    "/opt/homebrew/bin/python3"
+    "/usr/local/bin/python3"
+  )
+  for p in "${CANDIDATES[@]}"; do
+    if [ -x "$p" ]; then
+      echo "$p"
+      return 0
+    fi
+  done
+  if command -v python3 >/dev/null 2>&1; then
+    command -v python3
+    return 0
+  fi
+  return 1
+}
+
+ensure_user_env() {
+  local BOOT_PY
+  if ! BOOT_PY="$(pick_bootstrap_python)"; then
+    alert "Python 3 est introuvable.\nInstalle Python 3.12 depuis python.org puis relance l’app."
+    exit 1
+  fi
+
+  mkdir -p "$(dirname "$USER_VENV")"
+  local NEED_INSTALL=0
+  if [ ! -x "$USER_PY" ]; then
+    NEED_INSTALL=1
+  fi
+
+  local CUR_HASH=""
+  if [ -f "$REQ_FILE" ]; then
+    CUR_HASH="$(shasum -a 256 "$REQ_FILE" | awk '{print $1}')"
+  fi
+  local OLD_HASH=""
+  if [ -f "$REQ_HASH_FILE" ]; then
+    OLD_HASH="$(cat "$REQ_HASH_FILE")"
+  fi
+
+  if [ "$CUR_HASH" != "$OLD_HASH" ]; then
+    NEED_INSTALL=1
+  fi
+
+  if [ "$NEED_INSTALL" -eq 1 ]; then
+    echo "Installation / refresh venv utilisateur..."
+    "$BOOT_PY" -m venv "$USER_VENV" || { alert "Echec creation venv : $USER_VENV"; exit 1; }
+    "$USER_PY" -m pip install --upgrade pip setuptools wheel || { alert "Echec mise a jour pip dans la venv."; exit 1; }
+    if [ -f "$REQ_FILE" ]; then
+      "$USER_PY" -m pip install -r "$REQ_FILE" --disable-pip-version-check || { alert "Echec installation des dependances (voir log)."; exit 1; }
+      if [ -n "$CUR_HASH" ]; then
+        echo "$CUR_HASH" > "$REQ_HASH_FILE" || true
+      fi
+    fi
+  fi
+
+  # Sanity imports
+  "$USER_PY" - <<'PY' || { alert "Modules manquants ou invalides dans la venv utilisateur.\nRelance l’app pour reinstaller."; exit 1; }
+import tkinter as tk  # noqa
+import pdfminer.high_level, pypdf, rapidfuzz, docx2pdf, pandas, openpyxl  # noqa
+PY
+}
+
+PY=""
+MODE=""
+if [ -x "$PORTABLE_PY" ]; then
+  PY="$PORTABLE_PY"
+  MODE="portable"
+else
+  ensure_user_env
+  if [ -x "$USER_PY" ]; then
+    PY="$USER_PY"
+    MODE="user"
+  fi
+fi
+
+echo "MODE=${MODE:-none}"
+echo "PY=${PY:-not found}"
+
+# Vérifs minimales
+if [ -z "$PY" ]; then
+  alert "Environnement Python introuvable.\nCrée d’abord un venv portable (./app/venv) ou lance l’installeur utilisateur."
+  exit 1
+fi
+if [ ! -f "$MAIN" ]; then
+  alert "Script principal introuvable : $MAIN"
+  exit 1
+fi
+
+# Sanity check rapide (clôture propre avec message si modules absents)
+"$PY" - <<'PY' || { /usr/bin/osascript -e 'display dialog "Modules manquants dans l’environnement sélectionné.\nRelance build_portable.sh ou l’installeur." buttons {"OK"} default button 1 with icon caution'; exit 1; }
+import tkinter as tk
+import pdfminer.high_level, pypdf, rapidfuzz, docx2pdf, pandas, openpyxl
+PY
+
+# Lancement GUI
+exec "$PY" "$MAIN" "$@"

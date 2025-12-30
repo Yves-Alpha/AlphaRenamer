@@ -1,0 +1,6 @@
+pdfminer.six==20240706
+pypdf==5.0.1
+rapidfuzz==3.9.6
+docx2pdf==0.1.8
+pandas==2.2.3
+openpyxl==3.1.5

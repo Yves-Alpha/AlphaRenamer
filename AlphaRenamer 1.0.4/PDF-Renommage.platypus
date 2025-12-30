@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Name</key>
+  <string>PDF-Renommage</string>
+  <key>Identifier</key>
+  <string>org.yves.pdfrenommage</string>
+  <key>Version</key>
+  <string>1.0.4</string>
+  <key>Author</key>
+  <string>Yves Nowak</string>
+
+  <!-- Script settings -->
+  <key>ScriptType</key>
+  <string>Shell</string>
+  <key>Interpreter</key>
+  <string>/bin/bash</string>
+  <key>ScriptPath</key>
+  <string>launcher.sh</string>
+  <key>ScriptIsText</key>
+  <true/>
+
+  <!-- UI / runtime -->
+  <key>InterfaceType</key>
+  <string>None</string>
+  <key>RunInBackground</key>
+  <true/>
+  <key>Droppable</key>
+  <false/>
+
+  <!-- Resources bundled into the app -->
+  <key>BundledFiles</key>
+  <array>
+    <string>app</string>
+    <string>PORTABLE.md</string>
+  </array>
+
+  <!-- Icon -->
+  <key>UseCustomIcon</key>
+  <true/>
+  <key>IconPath</key>
+  <string>PDF-Renommage.app/Contents/Resources/AppIcon.icns</string>
+
+  <!-- Misc -->
+  <key>AcceptDroppedFileTypes</key>
+  <array/>
+  <key>Suffixes</key>
+  <array/>
+</dict>
+</plist>
