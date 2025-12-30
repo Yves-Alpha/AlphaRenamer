@@ -30,22 +30,32 @@ def rezip_folder(src: Path, dest_zip: Path) -> Path:
 
 
 def main():
-    st.set_page_config(page_title="AlphaRenamer Cloud", page_icon="🅰️", layout="centered")
-    st.title("🅰️ AlphaRenamer — Cloud")
+    st.set_page_config(page_title="Renommage de PDF", page_icon="🧾", layout="centered")
+    st.title("🧾 Renommage de PDF")
     st.markdown(
-        "Renomme des fichiers PDF à partir d’un lexique Excel (colonnes NOCLI/NOMCLI). "
-        "Charge un ZIP de fichiers, applique le lexique, puis télécharge le ZIP renommé."
+        "Guidé pour la compta :\n"
+        "1) Exporter les PDFs Word (publipostage) en ZIP.\n"
+        "2) Charger le **lexique Excel** (colonnes `NOCLI` et `NOMCLI`).\n"
+        "3) Charger le **ZIP de PDFs**.\n"
+        "4) Lancer le renommage, puis télécharger le ZIP renommé."
     )
 
-    lex_file = st.file_uploader("Lexique Excel (NOCLI / NOMCLI)", type=["xlsx"])
-    zip_file = st.file_uploader("ZIP contenant les fichiers à renommer (PDF)", type=["zip"])
-    dry_run = st.checkbox("Simulation (dry-run) — ne pas écrire les fichiers", value=False)
+    with st.expander("Infos rapides"):
+        st.markdown(
+            "- Le lexique doit contenir les colonnes **NOCLI** (code client) et **NOMCLI** (nom magasin).\n"
+            "- Les PDFs sont lus et renommés en fonction du code trouvé dans le texte (OCR déjà géré dans le backend Word → PDF).\n"
+            "- Option **Simulation** : permet de vérifier les correspondances sans écrire de fichiers."
+        )
+
+    lex_file = st.file_uploader("Étape 1 — Lexique Excel (NOCLI / NOMCLI)", type=["xlsx"], help="Fichier Excel du tableau clients")
+    zip_file = st.file_uploader("Étape 2 — ZIP des PDFs à renommer", type=["zip"], help="ZIP contenant les PDFs générés depuis Word")
+    dry_run = st.checkbox("Étape 3 — Simulation (dry-run) : ne pas écrire les fichiers", value=False)
 
     if not (lex_file and zip_file):
         st.info("Charge le lexique et le ZIP pour lancer le renommage.")
         return
 
-    if st.button("🚀 Lancer le renommage"):
+    if st.button("Étape 4 — 🚀 Lancer le renommage"):
         with st.spinner("Traitement en cours..."):
             try:
                 with tempfile.TemporaryDirectory() as tmpdir:
