@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+venv/
+ENV*/
+env*/
+*.env
+*.log
+dist/
+build/
+*.app
+*.zip
+Installer/
+PDF-Renommage.app/
+*.platypus
+1.0.4/

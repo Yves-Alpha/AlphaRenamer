@@ -4,12 +4,17 @@ from __future__ import annotations
 
 import io
 import shutil
+import sys
 import tempfile
 import zipfile
 from pathlib import Path
 
 import pandas as pd  # force import pour s'assurer que deps sont installées
 import streamlit as st
+
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from app.rename_from_lexique import LexiqueError, rename_with_lexique
 
